@@ -602,8 +602,7 @@ with st.sidebar:
 
     selected_provinces = [p for p in provinces if st.session_state.prov_selections[p]]
 
-    # Kabupaten/kota dibuat dinamis berdasarkan tahun dan provinsi.
-    kabupaten_scope_df = df[df["tahun"] == selected_year].copy()
+    kabupaten_scope_df = df.copy()
 
     kabupaten_scope_df = kabupaten_scope_df[
         kabupaten_scope_df["provinsi"].isin(selected_provinces)
@@ -668,12 +667,6 @@ with st.sidebar:
         k for k in kab_labels if st.session_state.kab_selections.get(k, False)
     ]
     selected_kabupaten_pairs = [kabupaten_lookup[k] for k in selected_kabupaten_labels]
-
-    selected_map_metric_label = st.selectbox(
-        "Metrik peta",
-        options=list(MAP_METRICS.keys()),
-        index=0,
-    )
 
 # -------------------------------------------------------------------
 # Filtered datasets
@@ -796,6 +789,17 @@ st.markdown(
 st.markdown(
     '<div class="section-title">Analisis Geospasial</div>', unsafe_allow_html=True
 )
+
+map_filter_col, map_note_col = st.columns([1.2, 3])
+
+with map_filter_col:
+    selected_map_metric_label = st.selectbox(
+        "Metrik peta",
+        options=list(MAP_METRICS.keys()),
+        index=0,
+        key="map_metric_selectbox",
+    )
+
 
 province_df = aggregate_province(filtered_df)
 map_metric = MAP_METRICS[selected_map_metric_label]
@@ -1042,10 +1046,6 @@ else:
 st.markdown(
     '<div class="section-title">Tren Persentase Sampah Terkelola 2018–2025</div>',
     unsafe_allow_html=True,
-)
-
-st.caption(
-    "Menjawab: Apakah pengelolaan sampah Indonesia membaik dari tahun ke tahun? Garis putus-putus menunjukkan target 70%."
 )
 
 trend_managed = (
