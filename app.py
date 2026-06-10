@@ -733,15 +733,23 @@ is_all_indonesia = (len(selected_provinces) == len(provinces)) and (
 # -------------------------------------------------------------------
 # Comparison Areas
 # -------------------------------------------------------------------
-is_city_comparison = len(selected_kabupaten_labels) < len(kab_labels) and not is_all_indonesia
+is_city_comparison = (
+    len(selected_kabupaten_labels) < len(kab_labels) and not is_all_indonesia
+)
 
 if is_city_comparison:
     compare_areas = selected_kabupaten_labels
     area_col = "area_label"
     if not detail_year_df.empty:
-        detail_year_df["area_label"] = detail_year_df["kabupaten_kota"] + " — " + detail_year_df["provinsi"]
+        detail_year_df["area_label"] = (
+            detail_year_df["kabupaten_kota"] + " — " + detail_year_df["provinsi"]
+        )
     if not historical_detail_df.empty:
-        historical_detail_df["area_label"] = historical_detail_df["kabupaten_kota"] + " — " + historical_detail_df["provinsi"]
+        historical_detail_df["area_label"] = (
+            historical_detail_df["kabupaten_kota"]
+            + " — "
+            + historical_detail_df["provinsi"]
+        )
 else:
     compare_areas = selected_provinces if not is_all_indonesia else []
     area_col = "provinsi"
@@ -980,15 +988,23 @@ else:
         )
         top_timbulan_df["color"] = "#2563eb"
     elif len(selected_provinces) <= 3:
-        top_timbulan_df = nat_timbulan[nat_timbulan["provinsi"].isin(selected_provinces)].copy()
-        top_timbulan_df = top_timbulan_df.sort_values("timbulan_tahunan_ton", ascending=True)
+        top_timbulan_df = nat_timbulan[
+            nat_timbulan["provinsi"].isin(selected_provinces)
+        ].copy()
+        top_timbulan_df = top_timbulan_df.sort_values(
+            "timbulan_tahunan_ton", ascending=True
+        )
         top_timbulan_df["color"] = "#f59e0b"
     else:
-        st.warning(f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(selected_provinces)} wilayah yang dipilih.")
+        st.warning(
+            f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(selected_provinces)} wilayah yang dipilih."
+        )
         top_timbulan_df = pd.DataFrame()
 
     if not top_timbulan_df.empty:
-        top_timbulan_df["label_timbulan"] = top_timbulan_df["timbulan_tahunan_ton"].apply(
+        top_timbulan_df["label_timbulan"] = top_timbulan_df[
+            "timbulan_tahunan_ton"
+        ].apply(
             lambda x: (
                 f"{x / 1_000_000:.2f}M"
                 if pd.notna(x) and x >= 1_000_000
@@ -1093,10 +1109,10 @@ else:
     st.plotly_chart(fig_category, width="stretch", config={"displayModeBar": False})
 
 # -------------------------------------------------------------------
-# 4. Line chart — Tren % terkelola 2018–2025
+# 4. Line chart — Tren % terkelola 2019–2025
 # -------------------------------------------------------------------
 
-min_yr = historical_detail_df["tahun"].min() if not historical_detail_df.empty else 2018
+min_yr = historical_detail_df["tahun"].min() if not historical_detail_df.empty else 2019
 max_yr = historical_detail_df["tahun"].max() if not historical_detail_df.empty else 2025
 
 trend_valid = historical_detail_df.dropna(subset=["terkelola_ton"]).copy()
@@ -1144,7 +1160,9 @@ else:
         )
         trend_grouped = trend_grouped.rename(columns={area_col: "area"})
     else:
-        st.warning(f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(compare_areas)} wilayah yang dipilih.")
+        st.warning(
+            f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(compare_areas)} wilayah yang dipilih."
+        )
         trend_grouped = pd.DataFrame()
 
     if not trend_grouped.empty:
@@ -1153,7 +1171,9 @@ else:
             trend_grouped["terkelola"] / trend_grouped["timbulan"] * 100,
             np.nan,
         )
-        trend_grouped = trend_grouped.dropna(subset=["pct_terkelola"]).sort_values(["area", "tahun"])
+        trend_grouped = trend_grouped.dropna(subset=["pct_terkelola"]).sort_values(
+            ["area", "tahun"]
+        )
 
         if trend_grouped.empty:
             st.markdown(
@@ -1195,7 +1215,9 @@ else:
 
             fig_trend_managed.update_traces(line=dict(width=3), marker=dict(size=8))
             if is_all_indonesia or len(compare_areas) == 0:
-                fig_trend_managed.update_traces(line=dict(color="#16a34a"), marker=dict(color="#16a34a"))
+                fig_trend_managed.update_traces(
+                    line=dict(color="#16a34a"), marker=dict(color="#16a34a")
+                )
 
             fig_trend_managed.update_layout(
                 height=460,
@@ -1208,7 +1230,11 @@ else:
                     zeroline=False,
                     range=[0, max(100, trend_grouped["pct_terkelola"].max() + 5)],
                 ),
-                legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1) if len(compare_areas) > 0 else None,
+                legend=dict(
+                    orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1
+                )
+                if len(compare_areas) > 0
+                else None,
                 showlegend=True if len(compare_areas) > 0 else False,
             )
             st.plotly_chart(
@@ -1410,7 +1436,9 @@ if is_all_indonesia or len(compare_areas) == 0:
         ).sort_values("Rata-rata Persentase", ascending=True)
 
 elif len(compare_areas) <= 3:
-    composition_source = composition_source[composition_source[area_col].isin(compare_areas)]
+    composition_source = composition_source[
+        composition_source[area_col].isin(compare_areas)
+    ]
     all_areas_data = []
     for area in compare_areas:
         area_rows = composition_source[composition_source[area_col] == area]
@@ -1432,7 +1460,9 @@ elif len(compare_areas) <= 3:
         if not composition.empty:
             area_df = pd.DataFrame(
                 {
-                    "Jenis Sampah": [COMPOSITION_COLUMNS[col] for col in composition.index],
+                    "Jenis Sampah": [
+                        COMPOSITION_COLUMNS[col] for col in composition.index
+                    ],
                     "Rata-rata Persentase": composition.values,
                     "area": area,
                 }
@@ -1441,13 +1471,21 @@ elif len(compare_areas) <= 3:
 
     if all_areas_data:
         composition_df = pd.concat(all_areas_data, ignore_index=True)
-        type_means = composition_df.groupby("Jenis Sampah")["Rata-rata Persentase"].mean().sort_values()
-        composition_df["Jenis Sampah"] = pd.Categorical(composition_df["Jenis Sampah"], categories=type_means.index, ordered=True)
+        type_means = (
+            composition_df.groupby("Jenis Sampah")["Rata-rata Persentase"]
+            .mean()
+            .sort_values()
+        )
+        composition_df["Jenis Sampah"] = pd.Categorical(
+            composition_df["Jenis Sampah"], categories=type_means.index, ordered=True
+        )
         composition_df = composition_df.sort_values(["Jenis Sampah", "area"])
     else:
         composition_df = pd.DataFrame()
 else:
-    st.warning(f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(compare_areas)} wilayah yang dipilih.")
+    st.warning(
+        f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(compare_areas)} wilayah yang dipilih."
+    )
     composition_df = pd.DataFrame()
 
 if composition_df.empty:
@@ -1470,7 +1508,11 @@ else:
             orientation="h",
             text="Label",
             hover_data={"Rata-rata Persentase": ":.2f"},
-            labels={"Rata-rata Persentase": "Rata-rata komposisi (%)", "Jenis Sampah": "", "area": "Wilayah"},
+            labels={
+                "Rata-rata Persentase": "Rata-rata komposisi (%)",
+                "Jenis Sampah": "",
+                "area": "Wilayah",
+            },
         )
     else:
         fig_composition_bar = px.bar(
@@ -1487,7 +1529,10 @@ else:
                 [1.0, "#1e3a8a"],
             ],
             hover_data={"Rata-rata Persentase": ":.2f"},
-            labels={"Rata-rata Persentase": "Rata-rata komposisi (%)", "Jenis Sampah": ""},
+            labels={
+                "Rata-rata Persentase": "Rata-rata komposisi (%)",
+                "Jenis Sampah": "",
+            },
         )
 
     fig_composition_bar.update_traces(
@@ -1610,12 +1655,20 @@ else:
             .head(15)
             .copy()
         )
-        handled_gap_df = handled_gap_df.sort_values("gap_tidak_tertangani_ton", ascending=True)
+        handled_gap_df = handled_gap_df.sort_values(
+            "gap_tidak_tertangani_ton", ascending=True
+        )
     elif len(selected_provinces) <= 3:
-        handled_gap_df = nat_timbulan[nat_timbulan["provinsi"].isin(selected_provinces)].copy()
-        handled_gap_df = handled_gap_df.sort_values("gap_tidak_tertangani_ton", ascending=True)
+        handled_gap_df = nat_timbulan[
+            nat_timbulan["provinsi"].isin(selected_provinces)
+        ].copy()
+        handled_gap_df = handled_gap_df.sort_values(
+            "gap_tidak_tertangani_ton", ascending=True
+        )
     else:
-        st.warning(f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(selected_provinces)} wilayah yang dipilih.")
+        st.warning(
+            f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(selected_provinces)} wilayah yang dipilih."
+        )
         handled_gap_df = pd.DataFrame()
 
     if not handled_gap_df.empty:
@@ -1637,7 +1690,10 @@ else:
         )
 
         handled_gap_long["status"] = handled_gap_long["status"].map(
-            {"terkelola_ton": "Tertangani", "gap_tidak_tertangani_ton": "Tidak tertangani"}
+            {
+                "terkelola_ton": "Tertangani",
+                "gap_tidak_tertangani_ton": "Tidak tertangani",
+            }
         )
         handled_gap_long["label_ton"] = handled_gap_long["ton"].apply(
             lambda x: (
@@ -1715,10 +1771,16 @@ else:
             nat_timbulan.sort_values("penanganan_ton", ascending=False).head(15).copy()
         )
     elif len(selected_provinces) <= 3:
-        grouped_metrics_df = nat_timbulan[nat_timbulan["provinsi"].isin(selected_provinces)].copy()
-        grouped_metrics_df = grouped_metrics_df.sort_values("penanganan_ton", ascending=False)
+        grouped_metrics_df = nat_timbulan[
+            nat_timbulan["provinsi"].isin(selected_provinces)
+        ].copy()
+        grouped_metrics_df = grouped_metrics_df.sort_values(
+            "penanganan_ton", ascending=False
+        )
     else:
-        st.warning(f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(selected_provinces)} wilayah yang dipilih.")
+        st.warning(
+            f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(selected_provinces)} wilayah yang dipilih."
+        )
         grouped_metrics_df = pd.DataFrame()
 
     if not grouped_metrics_df.empty:
@@ -1759,7 +1821,9 @@ else:
             paper_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(tickangle=-35, gridcolor=GRID_COLOR, zeroline=False),
             yaxis=dict(gridcolor=GRID_COLOR, zeroline=False),
-            legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1),
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1
+            ),
         )
         st.plotly_chart(fig_grouped, width="stretch", config={"displayModeBar": False})
 
@@ -1828,7 +1892,9 @@ else:
 # -------------------------------------------------------------------
 
 if is_all_indonesia or len(compare_areas) == 0:
-    trend_recycling_valid = historical_detail_df.dropna(subset=["daur_ulang_ton"]).copy()
+    trend_recycling_valid = historical_detail_df.dropna(
+        subset=["daur_ulang_ton"]
+    ).copy()
     trend_recycling = (
         trend_recycling_valid.groupby("tahun", as_index=False)
         .apply(
@@ -1843,7 +1909,11 @@ if is_all_indonesia or len(compare_areas) == 0:
     )
     trend_recycling["area"] = "Nasional"
 elif len(compare_areas) <= 3:
-    trend_recycling_valid = historical_detail_df[historical_detail_df[area_col].isin(compare_areas)].dropna(subset=["daur_ulang_ton"]).copy()
+    trend_recycling_valid = (
+        historical_detail_df[historical_detail_df[area_col].isin(compare_areas)]
+        .dropna(subset=["daur_ulang_ton"])
+        .copy()
+    )
     trend_recycling = (
         trend_recycling_valid.groupby([area_col, "tahun"], as_index=False)
         .apply(
@@ -1858,7 +1928,9 @@ elif len(compare_areas) <= 3:
     )
     trend_recycling = trend_recycling.rename(columns={area_col: "area"})
 else:
-    st.warning(f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(compare_areas)} wilayah yang dipilih.")
+    st.warning(
+        f"Pilih maksimal 3 wilayah untuk menampilkan perbandingan. Saat ini terdapat {len(compare_areas)} wilayah yang dipilih."
+    )
     trend_recycling = pd.DataFrame()
 
 if not trend_recycling.empty:
@@ -1867,7 +1939,9 @@ if not trend_recycling.empty:
         trend_recycling["daur_ulang"] / trend_recycling["timbulan"] * 100,
         np.nan,
     )
-    trend_recycling = trend_recycling.dropna(subset=["recycling_rate"]).sort_values(["area", "tahun"])
+    trend_recycling = trend_recycling.dropna(subset=["recycling_rate"]).sort_values(
+        ["area", "tahun"]
+    )
 
     if trend_recycling.empty:
         st.markdown(
@@ -1878,7 +1952,8 @@ if not trend_recycling.empty:
             "Catatan: Grafik tren menggunakan seluruh tahun yang tersedia dan tidak dipengaruhi oleh filter tahun. Filter wilayah digunakan untuk membandingkan maksimal 3 wilayah."
         )
         st.plotly_chart(
-            make_empty_figure("Data tren recycling rate tidak tersedia."), width="stretch"
+            make_empty_figure("Data tren recycling rate tidak tersedia."),
+            width="stretch",
         )
     else:
         trend_min_yr = int(trend_recycling["tahun"].min())
@@ -1891,18 +1966,24 @@ if not trend_recycling.empty:
             "Catatan: Grafik tren menggunakan seluruh tahun yang tersedia dan tidak dipengaruhi oleh filter tahun. Filter wilayah digunakan untuk membandingkan maksimal 3 wilayah."
         )
         fig_trend_recycling = px.line(
-        trend_recycling,
-        x="tahun",
-        y="recycling_rate",
-        color="area",
-        markers=True,
-        labels={"tahun": "Tahun", "recycling_rate": "Recycling rate (%)", "area": "Wilayah"},
-        hover_data={"recycling_rate": ":.2f"},
-    )
+            trend_recycling,
+            x="tahun",
+            y="recycling_rate",
+            color="area",
+            markers=True,
+            labels={
+                "tahun": "Tahun",
+                "recycling_rate": "Recycling rate (%)",
+                "area": "Wilayah",
+            },
+            hover_data={"recycling_rate": ":.2f"},
+        )
 
     fig_trend_recycling.update_traces(line=dict(width=3), marker=dict(size=8))
     if is_all_indonesia or len(compare_areas) == 0:
-        fig_trend_recycling.update_traces(line=dict(color="#0ea5e9"), marker=dict(color="#0ea5e9"))
+        fig_trend_recycling.update_traces(
+            line=dict(color="#0ea5e9"), marker=dict(color="#0ea5e9")
+        )
 
     fig_trend_recycling.update_layout(
         height=460,
@@ -1911,7 +1992,9 @@ if not trend_recycling.empty:
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(dtick=1, gridcolor=GRID_COLOR, zeroline=False),
         yaxis=dict(gridcolor=GRID_COLOR, zeroline=False),
-        legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1) if len(compare_areas) > 0 else None,
+        legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1)
+        if len(compare_areas) > 0
+        else None,
         showlegend=True if len(compare_areas) > 0 else False,
     )
     st.plotly_chart(
