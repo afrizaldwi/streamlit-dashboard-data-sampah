@@ -620,12 +620,11 @@ with st.sidebar:
     # A. national_year_df
     national_year_df = df[df["tahun"] == selected_year].copy()
 
-    # Filter available kab/kota for selected year and provinces
-    kabupaten_scope_df = national_year_df[
-        national_year_df["provinsi"].isin(selected_provinces)
-    ]
+    # Filter available kab/kota for ALL years (not just selected_year) for the options
+    kabupaten_scope_all_df = df[df["provinsi"].isin(selected_provinces)]
+
     kabupaten_display_df = (
-        kabupaten_scope_df[["kabupaten_kota", "provinsi"]]
+        kabupaten_scope_all_df[["kabupaten_kota", "provinsi"]]
         .dropna()
         .drop_duplicates()
         .sort_values(["kabupaten_kota", "provinsi"])
@@ -636,6 +635,11 @@ with st.sidebar:
         for row in kabupaten_display_df.itertuples(index=False)
     }
     kab_labels = list(kabupaten_lookup.keys())
+
+    # We still need kabupaten_scope_df filtered for the selected year for current condition charts
+    kabupaten_scope_df = national_year_df[
+        national_year_df["provinsi"].isin(selected_provinces)
+    ]
 
     if "kab_selections" not in st.session_state:
         st.session_state.kab_selections = {}
@@ -1095,16 +1099,16 @@ else:
 min_yr = historical_detail_df["tahun"].min() if not historical_detail_df.empty else 2018
 max_yr = historical_detail_df["tahun"].max() if not historical_detail_df.empty else 2025
 
-st.markdown(
-    f'<div class="section-title">Tren Persentase Sampah Terkelola {min_yr}–{max_yr}</div>',
-    unsafe_allow_html=True,
-)
-st.caption(
-    "Menampilkan rata-rata persentase berdasarkan timbulan dan sampah terkelola di wilayah yang dipilih per tahun."
-)
-
 trend_valid = historical_detail_df.dropna(subset=["terkelola_ton"]).copy()
+
 if trend_valid.empty:
+    st.markdown(
+        f'<div class="section-title">Tren Persentase Sampah Terkelola {min_yr}–{max_yr}</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Catatan: Grafik tren menggunakan seluruh tahun yang tersedia dan tidak dipengaruhi oleh filter tahun. Filter wilayah digunakan untuk membandingkan maksimal 3 wilayah."
+    )
     st.plotly_chart(
         make_empty_figure("Data tren persentase pengelolaan tidak tersedia."),
         width="stretch",
@@ -1152,6 +1156,13 @@ else:
         trend_grouped = trend_grouped.dropna(subset=["pct_terkelola"]).sort_values(["area", "tahun"])
 
         if trend_grouped.empty:
+            st.markdown(
+                f'<div class="section-title">Tren Persentase Sampah Terkelola {min_yr}–{max_yr}</div>',
+                unsafe_allow_html=True,
+            )
+            st.caption(
+                "Catatan: Grafik tren menggunakan seluruh tahun yang tersedia dan tidak dipengaruhi oleh filter tahun. Filter wilayah digunakan untuk membandingkan maksimal 3 wilayah."
+            )
             st.plotly_chart(
                 make_empty_figure(
                     "Data tren persentase pengelolaan tidak tersedia setelah agregasi."
@@ -1159,6 +1170,15 @@ else:
                 width="stretch",
             )
         else:
+            trend_min_yr = int(trend_grouped["tahun"].min())
+            trend_max_yr = int(trend_grouped["tahun"].max())
+            st.markdown(
+                f'<div class="section-title">Tren Persentase Sampah Terkelola {trend_min_yr}–{trend_max_yr}</div>',
+                unsafe_allow_html=True,
+            )
+            st.caption(
+                "Catatan: Grafik tren menggunakan seluruh tahun yang tersedia dan tidak dipengaruhi oleh filter tahun. Filter wilayah digunakan untuk membandingkan maksimal 3 wilayah."
+            )
             fig_trend_managed = px.line(
                 trend_grouped,
                 x="tahun",
@@ -1807,14 +1827,6 @@ else:
 # 12. Line chart — Tren recycling rate
 # -------------------------------------------------------------------
 
-st.markdown(
-    f'<div class="section-title">Tren Recycling Rate {min_yr}–{max_yr}</div>',
-    unsafe_allow_html=True,
-)
-st.caption(
-    "Recycling rate memiliki beberapa outlier, sehingga grafik ini digunakan sebagai indikator pendukung."
-)
-
 if is_all_indonesia or len(compare_areas) == 0:
     trend_recycling_valid = historical_detail_df.dropna(subset=["daur_ulang_ton"]).copy()
     trend_recycling = (
@@ -1858,37 +1870,53 @@ if not trend_recycling.empty:
     trend_recycling = trend_recycling.dropna(subset=["recycling_rate"]).sort_values(["area", "tahun"])
 
     if trend_recycling.empty:
+        st.markdown(
+            f'<div class="section-title">Tren Recycling Rate {min_yr}–{max_yr}</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "Catatan: Grafik tren menggunakan seluruh tahun yang tersedia dan tidak dipengaruhi oleh filter tahun. Filter wilayah digunakan untuk membandingkan maksimal 3 wilayah."
+        )
         st.plotly_chart(
             make_empty_figure("Data tren recycling rate tidak tersedia."), width="stretch"
         )
     else:
+        trend_min_yr = int(trend_recycling["tahun"].min())
+        trend_max_yr = int(trend_recycling["tahun"].max())
+        st.markdown(
+            f'<div class="section-title">Tren Recycling Rate {trend_min_yr}–{trend_max_yr}</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "Catatan: Grafik tren menggunakan seluruh tahun yang tersedia dan tidak dipengaruhi oleh filter tahun. Filter wilayah digunakan untuk membandingkan maksimal 3 wilayah."
+        )
         fig_trend_recycling = px.line(
-            trend_recycling,
-            x="tahun",
-            y="recycling_rate",
-            color="area",
-            markers=True,
-            labels={"tahun": "Tahun", "recycling_rate": "Recycling rate (%)", "area": "Wilayah"},
-            hover_data={"recycling_rate": ":.2f"},
-        )
+        trend_recycling,
+        x="tahun",
+        y="recycling_rate",
+        color="area",
+        markers=True,
+        labels={"tahun": "Tahun", "recycling_rate": "Recycling rate (%)", "area": "Wilayah"},
+        hover_data={"recycling_rate": ":.2f"},
+    )
 
-        fig_trend_recycling.update_traces(line=dict(width=3), marker=dict(size=8))
-        if is_all_indonesia or len(compare_areas) == 0:
-            fig_trend_recycling.update_traces(line=dict(color="#0ea5e9"), marker=dict(color="#0ea5e9"))
+    fig_trend_recycling.update_traces(line=dict(width=3), marker=dict(size=8))
+    if is_all_indonesia or len(compare_areas) == 0:
+        fig_trend_recycling.update_traces(line=dict(color="#0ea5e9"), marker=dict(color="#0ea5e9"))
 
-        fig_trend_recycling.update_layout(
-            height=460,
-            margin=dict(l=10, r=10, t=25, b=10),
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(dtick=1, gridcolor=GRID_COLOR, zeroline=False),
-            yaxis=dict(gridcolor=GRID_COLOR, zeroline=False),
-            legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1) if len(compare_areas) > 0 else None,
-            showlegend=True if len(compare_areas) > 0 else False,
-        )
-        st.plotly_chart(
-            fig_trend_recycling, width="stretch", config={"displayModeBar": False}
-        )
+    fig_trend_recycling.update_layout(
+        height=460,
+        margin=dict(l=10, r=10, t=25, b=10),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(dtick=1, gridcolor=GRID_COLOR, zeroline=False),
+        yaxis=dict(gridcolor=GRID_COLOR, zeroline=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1) if len(compare_areas) > 0 else None,
+        showlegend=True if len(compare_areas) > 0 else False,
+    )
+    st.plotly_chart(
+        fig_trend_recycling, width="stretch", config={"displayModeBar": False}
+    )
 
 # -------------------------------------------------------------------
 # 13. Heatmap recycling rate provinsi
